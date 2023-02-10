@@ -1,5 +1,7 @@
 // library imports
 import * as snowflake from 'snowflake-sdk'
+import * as mysql from 'mysql'
+import { createConnection } from 'mysql'
 
 // package config
 snowflake.configure({ ocspFailOpen: false })
@@ -12,37 +14,38 @@ const snowflakeDatabase = {
   password: process.env.PASSWORD || ''
 }
 
-let connection: snowflake.Connection
+const mysqlDatabase = {
+  port: Number(process.env.DB_PORT) || 0,
+  host: process.env.DB_HOST || '',
+  user: process.env.DB_USERNAME || '',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_DATABASE || ''
+}
+
+let connection: mysql.Connection
 let connection_ID: string
 let connected: boolean
 
 export { connection, connected }
 
 export function connect(): void {
-  connection = snowflake.createConnection(snowflakeDatabase)
+  connection = createConnection(mysqlDatabase)
 
-  if (!connection.isUp()) {
+  // if (connection.state) {
     connection.connect((err: any, conn: any) => {
       if (err) {
         console.error(`Unable to connect: ${err.message}`)
       } else {
-        console.log('Successfully connected to Snowflake')
-        connection_ID = conn.getId()
-        connected = connection.isUp()
-        console.log('connection status:', connection.isUp())
+        console.log('Successfully connected to MySQL')
+        connected = true
+        console.log(`connection status: ${connection.state}`)
       }
     })
-  }
+  // }
 }
 
 export function disconnect(): void {
-  connection.destroy((err: any, conn: any) => {
-    if (err) {
-      console.error(`Unable to disconnect: ${err.message}`)
-    } else {
-      console.log(`Disconnected connection with id: ${connection.getId()}`)
-    }
-  })
+  connection.destroy()
   connected = false
   connection_ID = ''
 }
